@@ -8,19 +8,23 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import pro.delfik.lmao.outward.item.ItemBuilder;
 import pro.delfik.lmao.util.U;
 import pro.delfik.lmao.util.Vec;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public abstract class Sector {
 	private static final Map<String, Sector> sectors = new HashMap<>();
+	private static final ItemStack teleportLobby = new ItemBuilder(Material.COMPASS).withDisplayName("§eВернуться в лобби").build();
 
 	private final List<String> players = new ArrayList<>();
-
 	private final Vec spawnPoint;
 
 	protected Sector(Vec vec){
@@ -45,7 +49,7 @@ public abstract class Sector {
 	public void onClick(PlayerInteractEvent event){
 		String nick = event.getPlayer().getName();
 		Material material = event.getMaterial();
-		if(material == Material.COMPASS) U.send(nick, "LOBBY_1");
+		if(material == teleportLobby.getType()) U.send(nick, "LOBBY_1");
 		else onClick(nick, material);
 	}
 
@@ -106,6 +110,12 @@ public abstract class Sector {
 		return true;
 	}
 
+	protected void giveDefaultItems(Player player){
+		Inventory inventory = player.getInventory();
+		inventory.clear();
+		inventory.setItem(8, teleportLobby);
+	}
+
 	public static Sector getSectorName(String sector){
 		for(Map.Entry<String, Sector> entry : sectors.entrySet())
 			if(entry.getKey().equals(sector))return entry.getValue();
@@ -120,5 +130,17 @@ public abstract class Sector {
 
 	public static void addSector(String sectorName, Sector sector){
 		sectors.put(sectorName, sector);
+	}
+
+	public static Collection<String> getNames(){
+		return sectors.keySet();
+	}
+
+	public static Collection<Sector> getSectors(){
+		return sectors.values();
+	}
+
+	public static Collection<Map.Entry<String, Sector>> getEntries(){
+		return sectors.entrySet();
 	}
 }

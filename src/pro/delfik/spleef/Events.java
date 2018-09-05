@@ -1,5 +1,6 @@
 package pro.delfik.spleef;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -14,7 +15,6 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 
 public class Events implements Listener{
 	@EventHandler
@@ -38,7 +38,9 @@ public class Events implements Listener{
 	@EventHandler
 	public void event(PlayerInteractEvent event){
 		if(event.getAction() == Action.PHYSICAL)return;
-		Sector.getSector(event.getPlayer().getName()).onClick(event);
+		Sector sector = Sector.getSector(event.getPlayer().getName());
+		if(sector == null) return;
+		sector.onClick(event);
 	}
 
 	@EventHandler

@@ -9,13 +9,12 @@ import pro.delfik.lmao.outward.gui.GUI;
 import pro.delfik.lmao.outward.gui.GeneralizedGUI;
 
 public class Spleef extends JavaPlugin{
-	public static final Material SPADE = Material.DIAMOND_SPADE;
 
 	@Override
 	public void onEnable(){
 		Bukkit.getPluginManager().registerEvents(new Events(), this);
-		Sector.addSector("lobby", new SectorLobby());
 		Sector.addSector("spleef_1", new SectorSpleef(-100, -100));
+		Sector.addSector("lobby", new SectorLobby());
 		AntiClicker.isStart = false;
 	}
 

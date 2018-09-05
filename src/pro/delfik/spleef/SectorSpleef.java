@@ -6,14 +6,24 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import pro.delfik.lmao.core.Person;
+import pro.delfik.lmao.outward.item.Ench;
 import pro.delfik.lmao.outward.item.I;
+import pro.delfik.lmao.outward.item.ItemBuilder;
 import pro.delfik.lmao.util.Vec3i;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SectorSpleef extends Sector{
+	private static final ItemStack spade = new ItemBuilder(Material.DIAMOND_SPADE).unbreakable().withDisplayName("§сЛАМАААААААТЬ")
+			.enchant(new Ench(Enchantment.DIG_SPEED, 10)).build();
+	private static final ItemStack teleportHub = new ItemBuilder(Material.EMERALD).withDisplayName("Вернуться в лобби").build();
+
 	private volatile boolean gameStarted = false, gameEnd = false;
 	private final Vec3i one, two;
 	private final List<String> game = new ArrayList<>();
@@ -40,6 +50,7 @@ public class SectorSpleef extends Sector{
 
 	private void checkPlayer(Player player){
 		I.delay(() -> {
+			if(player == null)return;
 			if(player.getHealth() < 19) playerDeath(player.getName(), false);
 			else player.setHealth(player.getHealth() - 18);
 		}, 0);
@@ -47,7 +58,8 @@ public class SectorSpleef extends Sector{
 
 	@Override
 	protected void onClick(String nick, Material material) {
-		if(material == Material.EMERALD) Sector.getSectorName("lobby").addPlayer(nick);
+		if(material == teleportHub.getType())
+			Sector.getSectorName("lobby").addPlayer(nick);
 	}
 
 	@Override
@@ -63,6 +75,7 @@ public class SectorSpleef extends Sector{
 
 	@Override
 	protected void onJoin(String nick) {
+		giveDefaultItems(Bukkit.getPlayer(nick));
 		if(gameStarted)addSpectator(nick);
 		else {
 			sendMessage("§eИгрок §c" + nick + " §eприсоединился");
@@ -83,6 +96,15 @@ public class SectorSpleef extends Sector{
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	protected void giveDefaultItems(Player player) {
+		super.giveDefaultItems(player);
+		Inventory inventory = player.getInventory();
+		inventory.setItem(0, spade);
+		inventory.setItem(7, teleportHub);
+		player.updateInventory();
 	}
 
 	private void playerDeath(String nick, boolean leave) {
@@ -112,6 +134,9 @@ public class SectorSpleef extends Sector{
 		startGameTask = I.delay(() -> {
 			gameStarted = true;
 			sendMessage("§eИгра началась!");
+			for (String nick : game){
+				Person.get(nick).sendTitle("§aИгра началась!");
+			}
 		}, 100).getTaskId();
 		gameTask = I.delay(() -> {
 			sendMessage("§eНикто не успел выиграть...");
