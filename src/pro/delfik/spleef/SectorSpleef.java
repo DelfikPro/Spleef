@@ -1,5 +1,6 @@
 package pro.delfik.spleef;
 
+import implario.util.Scheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -16,20 +17,37 @@ public class SectorSpleef extends Sector{
 	private volatile boolean gameStarted = false, gameEnd = false;
 	private final Vec3i one, two;
 	private final List<String> game = new ArrayList<>();
-	private int task = 0;
+	private volatile List<String> blockBreak = new ArrayList<>();
+	private int startGameTask = 0, gameTask = 0;
 
-	public SectorSpleef(){
-		super(new Vec3i(200, 10, 200));
+	public SectorSpleef(int x, int z){
+		super(new Vec3i(x, 3, z));
 		Location location = getSpawnPoint();
 		one = new Vec3i(location.getBlockX() - 15, location.getBlockY() - 2, location.getBlockZ() - 15);
 		two = new Vec3i(location.getBlockX() + 15, location.getBlockY() - 2, location.getBlockZ() + 15);
 		setSnow();
+		Scheduler.addTask(new Scheduler.RunTask(50, this::run));
+	}
+
+	private void run(){
+		for(String nick : game){
+			if(!gameStarted)break;
+			if(!blockBreak.contains(nick))
+				checkPlayer(Bukkit.getPlayer(nick));
+		}
+		blockBreak = new ArrayList<>();
+	}
+
+	private void checkPlayer(Player player){
+		I.delay(() -> {
+			if(player.getHealth() < 19) playerDeath(player.getName(), false);
+			else player.setHealth(player.getHealth() - 18);
+		}, 0);
 	}
 
 	@Override
 	protected void onClick(String nick, Material material) {
-		if(material == Material.EMERALD)
-			Sector.getSectorName("lobby").addPlayer(nick);
+		if(material == Material.EMERALD) Sector.getSectorName("lobby").addPlayer(nick);
 	}
 
 	@Override
@@ -47,6 +65,7 @@ public class SectorSpleef extends Sector{
 	protected void onJoin(String nick) {
 		if(gameStarted)addSpectator(nick);
 		else {
+			sendMessage("§eИгрок §c" + nick + " §eприсоединился");
 			game.add(nick);
 			if(game.size() > 1) startGame();
 		}
@@ -59,10 +78,15 @@ public class SectorSpleef extends Sector{
 
 	@Override
 	protected boolean onBreak(String nick, Player player, Block block) {
-		return !(gameStarted && block.getType() == Material.SNOW_BLOCK);
+		if(gameStarted && block.getType() == Material.SNOW_BLOCK){
+			if(!blockBreak.contains(nick))blockBreak.add(nick);
+			return false;
+		}
+		return true;
 	}
 
-	private void playerDeath(String nick, boolean leave){
+	private void playerDeath(String nick, boolean leave) {
+		if(!gameStarted)return;
 		sendMessage("§eИгрок §c" + nick + " §e" + (leave ? "ливнул" : "упал"));
 		game.remove(nick);
 		if(!leave) addSpectator(nick);
@@ -71,7 +95,8 @@ public class SectorSpleef extends Sector{
 				sendMessage("§eИгрок §c" + game.get(0) + " §eпобедил");
 				restartGame();
 			}else if(leave){
-				Bukkit.getScheduler().cancelTask(task);
+				Bukkit.getScheduler().cancelTask(startGameTask);
+				Bukkit.getScheduler().cancelTask(gameTask);
 				sendMessage("Недостаточно игроков");
 			}
 		}
@@ -82,12 +107,16 @@ public class SectorSpleef extends Sector{
 	}
 
 	private void startGame(){
-		if(task != 0)return;
+		if(startGameTask != 0)return;
 		sendMessage("§eЧерез 5 секунд, игра начнётся");
-		task = I.delay(() -> {
+		startGameTask = I.delay(() -> {
 			gameStarted = true;
 			sendMessage("§eИгра началась!");
 		}, 100).getTaskId();
+		gameTask = I.delay(() -> {
+			sendMessage("§eНикто не успел выиграть...");
+			restartGame();
+		}, 3600).getTaskId();
 	}
 
 	private void restartGame(){
@@ -99,10 +128,15 @@ public class SectorSpleef extends Sector{
 			player.setGameMode(GameMode.SURVIVAL);
 		}
 		setSnow();
+		blockBreak.clear();
+		blockBreak.addAll(getPlayers());
 		game.clear();
 		game.addAll(getPlayers());
 		gameEnd = false;
-		task = 0;
+		if(startGameTask != 0)I.s().cancelTask(startGameTask);
+		startGameTask = 0;
+		if(gameTask != 0)I.s().cancelTask(gameTask);
+		gameTask = 0;
 		if(game.size() > 1)startGame();
 	}
 

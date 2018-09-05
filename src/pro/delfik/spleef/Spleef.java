@@ -13,10 +13,9 @@ public class Spleef extends JavaPlugin{
 
 	@Override
 	public void onEnable(){
-		Bukkit.getPluginCommand("spleef").setExecutor(new CmdSpleef());
 		Bukkit.getPluginManager().registerEvents(new Events(), this);
 		Sector.addSector("lobby", new SectorLobby());
-		Sector.addSector("spleef_1", new SectorSpleef());
+		Sector.addSector("spleef_1", new SectorSpleef(-100, -100));
 		AntiClicker.isStart = false;
 	}
 

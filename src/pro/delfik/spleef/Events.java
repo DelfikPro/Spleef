@@ -48,12 +48,13 @@ public class Events implements Listener{
 
 	@EventHandler
 	public void event(InventoryClickEvent event){
-		event.setCancelled(event.getWhoClicked().getGameMode() == GameMode.SURVIVAL);
+		if(event.getWhoClicked().getGameMode() != GameMode.CREATIVE)
+			event.setCancelled(true);
 	}
 
 	@EventHandler
 	public void event(PlayerDropItemEvent event){
-		if(event.getPlayer().getGameMode() == GameMode.SURVIVAL)
+		if(event.getPlayer().getGameMode() != GameMode.CREATIVE)
 			event.setCancelled(true);
 	}
 
