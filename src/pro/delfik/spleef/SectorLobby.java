@@ -9,6 +9,8 @@ import pro.delfik.lmao.outward.inventory.SlotGUI;
 import pro.delfik.lmao.outward.item.ItemBuilder;
 import pro.delfik.lmao.util.Vec3i;
 
+import java.util.Map;
+
 public class SectorLobby extends Sector{
 	private static final ItemStack changeServer = new ItemBuilder(Material.WATCH)
 			.withDisplayName("§f>> §a§lИграть §f<<").build();;
@@ -22,15 +24,10 @@ public class SectorLobby extends Sector{
 					.getItemMeta()
 					.getDisplayName());
 			if(sector == null)return;
-			sector.addPlayer(player.getName());
+			sector.addPlayer(player);
 		}, null);
-		for(String sector : getNames())
-			gui.dummy(Material.DIAMOND_SPADE, sector);
-	}
-
-	@Override
-	protected void onJoin(String nick) {
-		giveDefaultItems(Bukkit.getPlayer(nick));
+		for(Map.Entry<String, Sector> entry : getEntries())
+			gui.dummy(entry.getValue().getMaterial(), entry.getKey());
 	}
 
 	@Override
@@ -41,7 +38,6 @@ public class SectorLobby extends Sector{
 
 	@Override
 	protected void giveDefaultItems(Player player){
-		if(player == null)return;
 		super.giveDefaultItems(player);
 		Inventory inventory = player.getInventory();
 		inventory.setItem(0, changeServer);

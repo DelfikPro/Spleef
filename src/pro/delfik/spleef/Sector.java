@@ -7,9 +7,14 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import pro.delfik.lmao.outward.item.ItemBuilder;
 import pro.delfik.lmao.util.U;
 import pro.delfik.lmao.util.Vec;
@@ -26,9 +31,19 @@ public abstract class Sector {
 
 	private final List<String> players = new ArrayList<>();
 	private final Vec spawnPoint;
+	private final Material material;
+
+	protected Sector(Vec vec, Material material){
+		this.spawnPoint = vec;
+		this.material = material;
+	}
 
 	protected Sector(Vec vec){
-		this.spawnPoint = vec;
+		this(vec, Material.DIAMOND_SPADE);
+	}
+
+	public Material getMaterial() {
+		return material;
 	}
 
 	public List<String> getPlayers(){
@@ -39,6 +54,22 @@ public abstract class Sector {
 		if(!containsPlayer(nick))return;
 		players.remove(nick);
 		onLeave(nick);
+	}
+
+	public void onDeath(PlayerRespawnEvent event){
+		event.setRespawnLocation(getSpawnPoint());
+		onDeath(event.getPlayer());
+	}
+
+	public void onHit(EntityDamageByEntityEvent event){
+		event.setCancelled(onHit(event.getEntity().getName(), event.getDamager().getName()));
+	}
+
+	public void onDamage(EntityDamageEvent event){
+		EntityDamageEvent.DamageCause cause = event.getCause();
+		String nick = event.getEntity().getName();
+		if(cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK)return;
+		event.setCancelled(onDamage(nick, cause));
 	}
 
 	public void onBreak(BlockBreakEvent event){
@@ -55,17 +86,23 @@ public abstract class Sector {
 
 	public void onRespawn(Player player){
 		String nick = player.getName();
-		teleport(nick);
+		teleport(player);
 		onRespawn(nick);
 	}
 
-	public void addPlayer(String nick){
+	public void addPlayer(Player player){
+		String nick = player.getName();
 		if(!canJoin(nick))return;
 		Sector sector = getSector(nick);
 		if(sector != null)sector.clearPlayer(nick);
 		players.add(nick);
-		teleport(nick);
+		teleport(player);
+		giveDefaultItems(player);
 		onJoin(nick);
+	}
+
+	public void addPlayer(String nick){
+		addPlayer(Bukkit.getPlayer(nick));
 	}
 
 	public boolean containsPlayer(String nick){
@@ -78,6 +115,10 @@ public abstract class Sector {
 			if(player == null)continue;
 			player.sendMessage(message);
 		}
+	}
+
+	public void sendMessage(String nick, String message){
+		sendMessage("§eИгрок §c" + nick + " §e" + message);
 	}
 
 	protected void teleport(String nick){
@@ -100,20 +141,38 @@ public abstract class Sector {
 	protected void onClick(String nick, Material material){
 	}
 
+	protected void onDeath(Player player){}
+
 	protected void onRespawn(String nick){}
 
 	protected void onJoin(String nick){}
 
 	protected void onLeave(String nick){}
 
+	protected boolean onDamage(String nick, EntityDamageEvent.DamageCause cause){
+		return true;
+	}
+
+	protected boolean onHit(String entity, String damager){
+		return true;
+	}
+
 	protected boolean onBreak(String nick, Player player, Block block){
 		return true;
 	}
 
 	protected void giveDefaultItems(Player player){
-		Inventory inventory = player.getInventory();
+		PlayerInventory inventory = player.getInventory();
+		inventory.setBoots(null);
+		inventory.setLeggings(null);
+		inventory.setChestplate(null);
+		inventory.setHelmet(null);
 		inventory.clear();
 		inventory.setItem(8, teleportLobby);
+	}
+
+	protected void giveDefaultItems(String nick){
+		giveDefaultItems(Bukkit.getPlayer(nick));
 	}
 
 	public static Sector getSectorName(String sector){
