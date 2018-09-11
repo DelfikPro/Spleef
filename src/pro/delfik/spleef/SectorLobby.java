@@ -31,7 +31,7 @@ public class SectorLobby extends Sector{
 	}
 
 	@Override
-	protected void onClick(String nick, Material material) {
+	public void onClick(String nick, Material material) {
 		if(material == changeServer.getType())
 			Bukkit.getPlayer(nick).openInventory(gui.inv());
 	}

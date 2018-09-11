@@ -14,6 +14,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
@@ -64,6 +65,11 @@ public class Events implements Listener{
 	@EventHandler
 	public void event(PlayerRespawnEvent event){
 		Sector.getSector(event.getPlayer().getName()).onDeath(event);
+	}
+
+	@EventHandler
+	public void event(PlayerMoveEvent event){
+		Sector.getSector(event.getPlayer().getName()).onMove(event);
 	}
 
 	@EventHandler

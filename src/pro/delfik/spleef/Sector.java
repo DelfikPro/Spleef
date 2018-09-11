@@ -11,6 +11,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -25,7 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Sector {
+public abstract class Sector implements SectorMethods{
 	private static final Map<String, Sector> sectors = new HashMap<>();
 	private static final ItemStack teleportLobby = new ItemBuilder(Material.COMPASS).withDisplayName("§eВернуться в лобби").build();
 
@@ -48,6 +49,10 @@ public abstract class Sector {
 
 	public List<String> getPlayers(){
 		return players;
+	}
+
+	public void onMove(PlayerMoveEvent event){
+		onMove(event.getPlayer().getName(), event.getFrom(), event.getTo());
 	}
 
 	public void clearPlayer(String nick){
@@ -132,33 +137,6 @@ public abstract class Sector {
 
 	protected Location getSpawnPoint(){
 		return spawnPoint.toLocation(Bukkit.getWorlds().get(0));
-	}
-
-	protected boolean canJoin(String nick){
-		return true;
-	}
-
-	protected void onClick(String nick, Material material){
-	}
-
-	protected void onDeath(Player player){}
-
-	protected void onRespawn(String nick){}
-
-	protected void onJoin(String nick){}
-
-	protected void onLeave(String nick){}
-
-	protected boolean onDamage(String nick, EntityDamageEvent.DamageCause cause){
-		return true;
-	}
-
-	protected boolean onHit(String entity, String damager){
-		return true;
-	}
-
-	protected boolean onBreak(String nick, Player player, Block block){
-		return true;
 	}
 
 	protected void giveDefaultItems(Player player){

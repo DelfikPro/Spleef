@@ -36,24 +36,24 @@ public class SectorPVP extends Sector{
 	private final Map<String, Integer> points = new HashMap<>();
 
 	@Override
-	protected void onRespawn(String nick) {
+	public void onRespawn(String nick) {
 		giveDefaultItems(nick);
 		playerDeath(Bukkit.getPlayer(nick), false);
 	}
 
 	@Override
-	protected void onDeath(Player player) {
+	public void onDeath(Player player) {
 		giveDefaultItems(player);
 		playerDeath(player, true);
 	}
 
 	@Override
-	protected void onJoin(String nick) {
+	public void onJoin(String nick) {
 		sendMessage(nick, "присоединился");
 	}
 
 	@Override
-	protected void onLeave(String nick) {
+	public void onLeave(String nick) {
 		points.remove(nick);
 		players.remove(nick);
 		lastDamage.remove(nick);
@@ -61,7 +61,7 @@ public class SectorPVP extends Sector{
 	}
 
 	@Override
-	protected boolean onDamage(String nick, EntityDamageEvent.DamageCause cause) {
+	public boolean onDamage(String nick, EntityDamageEvent.DamageCause cause) {
 		if(cause == EntityDamageEvent.DamageCause.FALL){
 			Player player = Bukkit.getPlayer(nick);
 			if(player.getLocation().getY() > 30 || players.contains(nick))return true;
@@ -72,7 +72,7 @@ public class SectorPVP extends Sector{
 	}
 
 	@Override
-	protected boolean onHit(String entity, String damager) {
+	public boolean onHit(String entity, String damager) {
 		if(players.contains(entity) && players.contains(damager)){
 			lastDamage.put(entity, damager);
 			return false;
@@ -81,7 +81,7 @@ public class SectorPVP extends Sector{
 	}
 
 	@Override
-	protected void onClick(String nick, Material material) {
+	public void onClick(String nick, Material material) {
 		if(material == Spleef.teleportHub.getType())
 			Sector.getSectorName("lobby").addPlayer(nick);
 	}

@@ -3,3 +3,5 @@ version: 1.0
 author: DelfikPro
 main: pro.delfik.spleef.Spleef
 softdepend: [LMAONetwork, ImplarioLib]
+commands:
+  spleef:
