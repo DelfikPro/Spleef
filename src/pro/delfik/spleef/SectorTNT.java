@@ -1,6 +1,6 @@
 package pro.delfik.spleef;
 
-import implario.util.Rank;
+import implario.util.Scheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -22,11 +22,30 @@ public class SectorTNT extends Sector{
 	private final List<String> game = new ArrayList<>();
 	private volatile int gameTask = 0, startGameTask = 0;
 	private volatile boolean gameStarted = false, gameEnd = false;
+	private volatile List<String> blockBreak = new ArrayList<>();
 
 	public SectorTNT(Vec spawn, Cuboid... cuboids) {
 		super(spawn, Material.TNT);
 		this.cuboids = cuboids;
 		setBlocks();
+		Scheduler.addTask(new Scheduler.RunTask(15, this::run));
+	}
+
+	private void run(){
+		for(String nick : game){
+			if(!gameStarted)break;
+			if(!blockBreak.contains(nick))
+				checkPlayer(Bukkit.getPlayer(nick));
+		}
+		blockBreak = new ArrayList<>();
+	}
+
+	private void checkPlayer(Player player){
+		I.delay(() -> {
+			if(player == null)return;
+			if(player.getHealth() < 19) playerDeath(player.getName(), false);
+			else player.setHealth(player.getHealth() - 18);
+		}, 0);
 	}
 
 	@Override
@@ -36,6 +55,7 @@ public class SectorTNT extends Sector{
 		if(i == -1)return;
 		Block block = new Location(Bukkit.getWorlds().get(0), in.getBlockX(), i, in.getBlockZ()).getBlock();
 		if(block.getType() != SectorTNT.block)return;
+		if(!blockBreak.contains(nick))blockBreak.add(nick);
 		I.delay(() -> breakBlock(block), 6);
 	}
 
@@ -55,12 +75,7 @@ public class SectorTNT extends Sector{
 
 	@Override
 	public boolean canJoin(String nick) {
-		if(gameEnd)return false;
-		Person person = Person.get(nick);
-		if(person == null)return false;
-		if(person.getRank() != Rank.PLAYER)return true;
-		person.sendMessage("§cЗакрытое тестирование, прости :c");
-		return false;
+		return !gameEnd;
 	}
 
 	@Override
@@ -154,9 +169,10 @@ public class SectorTNT extends Sector{
 
 	private void setBlocks(){
 		for(Cuboid cuboid : cuboids)
-			cuboid.foreach((vec) -> new Location(
-					Bukkit.getWorlds().get(0), vec.x, vec.y, vec.z)
-					.getBlock().setType(block)
-			);
+			cuboid.foreach((vec) -> {
+				Block block = new Location(Bukkit.getWorlds().get(0), vec.x, vec.y, vec.z).getBlock();
+				if(block.getType() != Material.AIR)return;
+				block.setType(SectorTNT.block);
+			});
 	}
 }
