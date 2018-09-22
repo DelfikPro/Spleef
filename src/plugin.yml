@@ -4,4 +4,4 @@ author: DelfikPro
 main: pro.delfik.spleef.Spleef
 softdepend: [LMAONetwork, ImplarioLib]
 commands:
-  spleef:
+  sector:

@@ -1,4 +1,4 @@
-package pro.delfik.spleef;
+package pro.delfik.spleef.sector;
 
 import implario.util.Scheduler;
 import org.bukkit.Bukkit;
@@ -6,29 +6,40 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import pro.delfik.lmao.core.Person;
+import pro.delfik.lmao.outward.item.Ench;
 import pro.delfik.lmao.outward.item.I;
-import pro.delfik.lmao.util.Vec;
+import pro.delfik.lmao.outward.item.ItemBuilder;
+import pro.delfik.lmao.util.Vec3i;
+import pro.delfik.spleef.Cuboid;
+import pro.delfik.spleef.Spleef;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SectorTNT extends Sector{
-	private static final Material block = Material.EMERALD_BLOCK;
+public class SectorSpleef extends Sector{
+	private static final ItemStack spade = new ItemBuilder(Material.DIAMOND_SPADE).unbreakable().withDisplayName("§сЛАМАААААААТЬ")
+			.enchant(new Ench(Enchantment.DIG_SPEED, 10)).build();
 
-	private final Cuboid cuboids[];
-	private final List<String> game = new ArrayList<>();
-	private volatile int gameTask = 0, startGameTask = 0;
 	private volatile boolean gameStarted = false, gameEnd = false;
+	private final Cuboid cuboid;
+	private final List<String> game = new ArrayList<>();
 	private volatile List<String> blockBreak = new ArrayList<>();
+	private int startGameTask = 0, gameTask = 0;
 
-	public SectorTNT(Vec spawn, Cuboid... cuboids) {
-		super(spawn, Material.TNT);
-		this.cuboids = cuboids;
-		setBlocks();
-		Scheduler.addTask(new Scheduler.RunTask(15, this::run));
+	public SectorSpleef(int x, int z){
+		super(new Vec3i(x, 3, z), spade.getType());
+		Location location = getSpawnPoint();
+		cuboid = new Cuboid(
+				new Vec3i(location.getBlockX() - 15, location.getBlockY() - 2, location.getBlockZ() - 15),
+			 	new Vec3i(location.getBlockX() + 15, location.getBlockY() - 2, location.getBlockZ() + 15)
+		);
+		setSnow();
+		Scheduler.addTask(new Scheduler.RunTask(50, this::run));
 	}
 
 	private void run(){
@@ -46,25 +57,6 @@ public class SectorTNT extends Sector{
 			if(player.getHealth() < 19) playerDeath(player.getName(), false);
 			else player.setHealth(player.getHealth() - 18);
 		}, 0);
-	}
-
-	@Override
-	public void onMove(String nick, Location in, Location out) {
-		if(!gameStarted)return;
-		int i = getBlock(in, 0);
-		if(i == -1)return;
-		Block block = new Location(Bukkit.getWorlds().get(0), in.getBlockX(), i, in.getBlockZ()).getBlock();
-		if(block.getType() != SectorTNT.block)return;
-		if(!blockBreak.contains(nick))blockBreak.add(nick);
-		I.delay(() -> breakBlock(block), 6);
-	}
-
-	private int getBlock(Location in, int i){
-		if(cuboids.length <= i)return -1;
-		Cuboid cuboid = cuboids[i];
-		int y = in.getBlockY() - cuboid.getOne().toVec3i().y;
-		if(y > 0 && y < 1.5)return cuboid.getOne().toVec3i().y;
-		return getBlock(in, i + 1);
 	}
 
 	@Override
@@ -101,16 +93,21 @@ public class SectorTNT extends Sector{
 	}
 
 	@Override
+	public boolean onBreak(String nick, Player player, Block block) {
+		if(gameStarted && block.getType() == Material.SNOW_BLOCK){
+			if(!blockBreak.contains(nick))blockBreak.add(nick);
+			return false;
+		}
+		return true;
+	}
+
+	@Override
 	protected void giveDefaultItems(Player player) {
 		super.giveDefaultItems(player);
 		Inventory inventory = player.getInventory();
+		inventory.setItem(0, spade);
 		inventory.setItem(7, Spleef.teleportHub);
 		player.updateInventory();
-	}
-
-	private void breakBlock(Block block){
-		if(!gameStarted)return;
-		block.setType(Material.AIR);
 	}
 
 	private void playerDeath(String nick, boolean leave) {
@@ -133,7 +130,7 @@ public class SectorTNT extends Sector{
 		Bukkit.getPlayer(nick).setGameMode(GameMode.SPECTATOR);
 	}
 
-	public void startGame(){
+	private void startGame(){
 		if(startGameTask != 0)return;
 		sendMessage("§eЧерез 5 секунд, игра начнётся");
 		startGameTask = I.delay(() -> {
@@ -156,23 +153,21 @@ public class SectorTNT extends Sector{
 			teleport(player);
 			player.setGameMode(GameMode.SURVIVAL);
 		}
-		setBlocks();
+		setSnow();
+		blockBreak.clear();
+		blockBreak.addAll(getPlayers());
 		game.clear();
 		game.addAll(getPlayers());
+		gameEnd = false;
 		if(startGameTask != 0)I.s().cancelTask(startGameTask);
 		startGameTask = 0;
 		if(gameTask != 0)I.s().cancelTask(gameTask);
 		gameTask = 0;
-		gameEnd = false;
 		if(game.size() > 1)startGame();
 	}
 
-	private void setBlocks(){
-		for(Cuboid cuboid : cuboids)
-			cuboid.foreach((vec) -> {
-				Block block = new Location(Bukkit.getWorlds().get(0), vec.x, vec.y, vec.z).getBlock();
-				if(block.getType() != Material.AIR)return;
-				block.setType(SectorTNT.block);
-			});
+	private void setSnow(){
+		cuboid.foreach((vec) -> new Location(Bukkit.getWorlds().get(0), vec.x, vec.y, vec.z)
+				.getBlock().setType(Material.SNOW_BLOCK));
 	}
 }

@@ -1,4 +1,4 @@
-package pro.delfik.spleef;
+package pro.delfik.spleef.sector;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -27,7 +27,8 @@ public class SectorLobby extends Sector{
 			sector.addPlayer(player);
 		}, null);
 		for(Map.Entry<String, Sector> entry : getEntries())
-			gui.dummy(entry.getValue().getMaterial(), entry.getKey());
+			if(entry.getValue().visible())
+				gui.dummy(entry.getValue().getMaterial(), entry.getKey());
 	}
 
 	@Override

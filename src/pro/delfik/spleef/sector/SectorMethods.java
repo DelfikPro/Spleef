@@ -1,4 +1,4 @@
-package pro.delfik.spleef;
+package pro.delfik.spleef.sector;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -32,6 +32,10 @@ public interface SectorMethods {
 	}
 
 	default boolean onBreak(String nick, Player player, Block block){
+		return true;
+	}
+
+	default boolean visible(){
 		return true;
 	}
 }

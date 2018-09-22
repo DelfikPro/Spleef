@@ -1,4 +1,4 @@
-package pro.delfik.spleef;
+package pro.delfik.spleef.sector;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -11,6 +11,7 @@ import org.bukkit.inventory.PlayerInventory;
 import pro.delfik.lmao.outward.item.Ench;
 import pro.delfik.lmao.outward.item.ItemBuilder;
 import pro.delfik.lmao.util.Vec3i;
+import pro.delfik.spleef.Spleef;
 
 import java.util.ArrayList;
 import java.util.HashMap;
