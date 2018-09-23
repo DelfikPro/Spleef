@@ -10,7 +10,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import pro.delfik.lmao.core.Person;
+import pro.delfik.lmao.user.Person;
 import pro.delfik.lmao.outward.item.Ench;
 import pro.delfik.lmao.outward.item.I;
 import pro.delfik.lmao.outward.item.ItemBuilder;

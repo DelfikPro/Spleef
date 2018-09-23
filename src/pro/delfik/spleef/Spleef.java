@@ -3,10 +3,9 @@ package pro.delfik.spleef;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import pro.delfik.lmao.anticheat.AntiClicker;
-import pro.delfik.lmao.core.Registrar;
+import pro.delfik.lmao.ev.EvInteract;
+import pro.delfik.lmao.util.Registrar;
 import pro.delfik.lmao.outward.item.ItemBuilder;
-import pro.delfik.lmao.util.Vec3i;
 import pro.delfik.spleef.sector.Sector;
 import pro.delfik.spleef.sector.SectorLobby;
 import pro.delfik.spleef.sector.SectorPVP;
@@ -24,7 +23,7 @@ public class Spleef extends JavaPlugin{
 		Sector.addSector("spleef_2", new SectorSpleef(-3000, -100));
 		Sector.addSector("spleef_1", new SectorSpleef(-2000, -100));
 		Sector.addSector("lobby", new SectorLobby());
-		AntiClicker.isStart = false;
+		EvInteract.isStart = false;
 	}
 
 	@Override
