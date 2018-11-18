@@ -17,7 +17,7 @@ public class SectorLobby extends Sector{
 	private static SlotGUI gui;
 
 	public SectorLobby(){
-		super(new Vec3i(100, 100, 100));
+		super(new Vec3i(-330, 4, 63));
 		if(gui != null)return;
 		gui = new SlotGUI("Выбор сервера", 1, (player, slot, item) -> {
 			Sector sector = getSectorName(item

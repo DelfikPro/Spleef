@@ -10,6 +10,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import pro.delfik.lmao.Lmao;
 import pro.delfik.lmao.user.Person;
 import pro.delfik.lmao.outward.item.Ench;
 import pro.delfik.lmao.outward.item.I;
@@ -28,35 +29,14 @@ public class SectorSpleef extends Sector{
 	private volatile boolean gameStarted = false, gameEnd = false;
 	private final Cuboid cuboid;
 	private final List<String> game = new ArrayList<>();
-	private volatile List<String> blockBreak = new ArrayList<>();
 	private int startGameTask = 0, gameTask = 0;
+	private final Vec3i spectators;
 
-	public SectorSpleef(int x, int z){
-		super(new Vec3i(x, 3, z), spade.getType());
-		Location location = getSpawnPoint();
-		cuboid = new Cuboid(
-				new Vec3i(location.getBlockX() - 15, location.getBlockY() - 2, location.getBlockZ() - 15),
-			 	new Vec3i(location.getBlockX() + 15, location.getBlockY() - 2, location.getBlockZ() + 15)
-		);
+	public SectorSpleef(Vec3i spawn, Vec3i spectators, Cuboid cuboid){
+		super(spawn, spade.getType());
+		this.cuboid = cuboid;
+		this.spectators = spectators;
 		setSnow();
-		Scheduler.addTask(new Scheduler.RunTask(50, this::run));
-	}
-
-	private void run(){
-		for(String nick : game){
-			if(!gameStarted)break;
-			if(!blockBreak.contains(nick))
-				checkPlayer(Bukkit.getPlayer(nick));
-		}
-		blockBreak = new ArrayList<>();
-	}
-
-	private void checkPlayer(Player player){
-		I.delay(() -> {
-			if(player == null)return;
-			if(player.getHealth() < 19) playerDeath(player.getName(), false);
-			else player.setHealth(player.getHealth() - 18);
-		}, 0);
 	}
 
 	@Override
@@ -79,6 +59,10 @@ public class SectorSpleef extends Sector{
 	@Override
 	public void onJoin(String nick) {
 		if(gameStarted){
+			if(game.size() < 2){
+				restartGame();
+				return;
+			}
 			addSpectator(nick);
 			return;
 		}
@@ -94,11 +78,7 @@ public class SectorSpleef extends Sector{
 
 	@Override
 	public boolean onBreak(String nick, Player player, Block block) {
-		if(gameStarted && block.getType() == Material.SNOW_BLOCK){
-			if(!blockBreak.contains(nick))blockBreak.add(nick);
-			return false;
-		}
-		return true;
+		return !(gameStarted && block.getType() == Material.SNOW_BLOCK);
 	}
 
 	@Override
@@ -127,7 +107,7 @@ public class SectorSpleef extends Sector{
 	}
 
 	private void addSpectator(String nick){
-		Bukkit.getPlayer(nick).setGameMode(GameMode.SPECTATOR);
+		Person.get(nick).teleport(spectators.toLocation(Bukkit.getWorlds().get(0)));
 	}
 
 	private void startGame(){
@@ -151,11 +131,8 @@ public class SectorSpleef extends Sector{
 		for(String nick : getPlayers()){
 			Player player = Bukkit.getPlayer(nick);
 			teleport(player);
-			player.setGameMode(GameMode.SURVIVAL);
 		}
 		setSnow();
-		blockBreak.clear();
-		blockBreak.addAll(getPlayers());
 		game.clear();
 		game.addAll(getPlayers());
 		gameEnd = false;
@@ -167,7 +144,10 @@ public class SectorSpleef extends Sector{
 	}
 
 	private void setSnow(){
-		cuboid.foreach((vec) -> new Location(Bukkit.getWorlds().get(0), vec.x, vec.y, vec.z)
-				.getBlock().setType(Material.SNOW_BLOCK));
+		Bukkit.getScheduler().runTask(Lmao.plugin, () ->{cuboid.foreach((vec) -> {
+			new Location(Bukkit.getWorlds().get(0), vec.x, vec.y, vec.z)
+					.getBlock().setType(Material.SNOW_BLOCK);
+		});});
+
 	}
 }
