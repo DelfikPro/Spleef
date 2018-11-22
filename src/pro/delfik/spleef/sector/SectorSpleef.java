@@ -1,6 +1,9 @@
 package pro.delfik.spleef.sector;
 
+import implario.net.packet.PacketTopUpdate;
+import implario.util.ByteZip;
 import implario.util.Scheduler;
+import implario.util.ServerType;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -10,6 +13,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import pro.delfik.lmao.Connect;
 import pro.delfik.lmao.Lmao;
 import pro.delfik.lmao.user.Person;
 import pro.delfik.lmao.outward.item.Ench;
@@ -93,11 +97,14 @@ public class SectorSpleef extends Sector{
 	private void playerDeath(String nick, boolean leave) {
 		game.remove(nick);
 		sendMessage(nick, leave ? "ливнул" : "упал");
+		updateStatistics(nick, false);
 		if(!gameStarted) return;
 		if(!leave) addSpectator(nick);
 		if(game.size() != 1) return;
 		if(gameStarted){
-			sendMessage(game.get(0), "победил");
+			String win = game.get(0);
+			updateStatistics(win, true);
+			sendMessage(win, "победил");
 			restartGame();
 		}else if(leave){
 			Bukkit.getScheduler().cancelTask(startGameTask);
@@ -148,6 +155,9 @@ public class SectorSpleef extends Sector{
 			new Location(Bukkit.getWorlds().get(0), vec.x, vec.y, vec.z)
 					.getBlock().setType(Material.SNOW_BLOCK);
 		});});
+	}
 
+	public static void updateStatistics(String nick, boolean win){
+		Connect.send(new PacketTopUpdate(ServerType.SPLEEF, new ByteZip().add(1).add(win ? 1 : 0).build(), nick));
 	}
 }
