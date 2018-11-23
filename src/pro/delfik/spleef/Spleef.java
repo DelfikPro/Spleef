@@ -1,15 +1,17 @@
 package pro.delfik.spleef;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import pro.delfik.lmao.ev.EvInteract;
-import pro.delfik.lmao.util.Registrar;
 import pro.delfik.lmao.outward.item.ItemBuilder;
+import pro.delfik.lmao.util.Registrar;
 import pro.delfik.lmao.util.Vec3i;
 import pro.delfik.spleef.sector.Sector;
 import pro.delfik.spleef.sector.SectorLobby;
-import pro.delfik.spleef.sector.SectorPVP;
 import pro.delfik.spleef.sector.SectorSpleef;
 
 public class Spleef extends JavaPlugin{
@@ -34,6 +36,6 @@ public class Spleef extends JavaPlugin{
 
 	@Override
 	public void onDisable(){
-
+		for (Entity e : Bukkit.getWorlds().get(0).getEntities()) if (e.getType() == EntityType.ARMOR_STAND) e.remove();
 	}
 }
