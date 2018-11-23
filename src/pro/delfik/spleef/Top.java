@@ -16,11 +16,11 @@ public class Top {
 	public static void update(String[] array) {
 		World w = Bukkit.getWorlds().get(0);
 
-		String[] names = new String[array.length + 2];
-		String[] wins = new String[array.length + 2];
-		String[] games = new String[array.length + 2];
+		String[] names = new String[array.length + 1];
+		String[] wins = new String[array.length + 1];
+		String[] games = new String[array.length + 1];
 
-		Location first = new Location(w, -324, 7, 62);
+		Location first = new Location(w, -348, 8, 65);
 
 		if (numbers == null) numbers = Texteria.create(first.clone(),
 				new String[] {"§d§l#", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"});
@@ -34,11 +34,11 @@ public class Top {
 			wins[i] = isNull ? "§7-" : "§a" + split[1];
 			games[i] = isNull ? "§7-" : "§a" + split[2];
 		}
-		if (Top.names == null) Top.names = Texteria.create(first.clone().add(0, 0, 1), names);
+		if (Top.names == null) Top.names = Texteria.create(first.clone().add(0, 0, -1), names);
 		else Top.names.setLines(names);
-		if (Top.wins == null) Top.wins = Texteria.create(first.clone().add(0, 0, 3), games);
+		if (Top.wins == null) Top.wins = Texteria.create(first.clone().add(0, 0, -3), games);
 		else Top.wins.setLines(games);
-		if (Top.games == null) Top.games = Texteria.create(first.clone().add(0, 0, 2), wins);
+		if (Top.games == null) Top.games = Texteria.create(first.clone().add(0, 0, -2), wins);
 		else Top.games.setLines(wins);
 	}
 }
