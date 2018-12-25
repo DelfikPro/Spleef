@@ -1,7 +1,16 @@
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by Fernflower decompiler)
+//
+
 package pro.delfik.spleef;
 
+import __google_.util.FileIO;
+import java.io.File;
+import java.util.Iterator;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
@@ -9,33 +18,65 @@ import org.bukkit.plugin.java.JavaPlugin;
 import pro.delfik.lmao.ev.EvInteract;
 import pro.delfik.lmao.outward.item.ItemBuilder;
 import pro.delfik.lmao.util.Registrar;
-import pro.delfik.lmao.util.Vec3i;
+import pro.delfik.spleef.modification.SectorInfo;
 import pro.delfik.spleef.sector.Sector;
 import pro.delfik.spleef.sector.SectorLobby;
-import pro.delfik.spleef.sector.SectorSpleef;
 
-public class Spleef extends JavaPlugin{
-	public static final ItemStack teleportHub = new ItemBuilder(Material.EMERALD).withDisplayName("Вернуться в лобби").build();
+public class Spleef extends JavaPlugin {
+	public static final ItemStack teleportHub;
 
-	@Override
-	public void onEnable(){
+	public Spleef() {
+	}
+
+	public void onEnable() {
 		Registrar reg = new Registrar(this);
 		reg.regEvent(new Events());
 		reg.regCommand(new CmdSector());
-		Sector.addSector("spleef_2", new SectorSpleef(
-				new Vec3i(-397, 4, 100), new Vec3i(-402, 4, 120),
-				new Cuboid(new Vec3i(-413, 3, 87), new Vec3i(-382, 3, 112))
-		));
-		Sector.addSector("spleef_1", new SectorSpleef(
-				new Vec3i(-334, 4, 28), new Vec3i(-334, 11, 28),
-				new Cuboid(new Vec3i(-344, 3, 22), new Vec3i(-326, 3, 34))
-		));
+
+		try {
+			initSectors();
+		} catch (Exception var3) {
+			var3.printStackTrace();
+		}
+
 		Sector.addSector("lobby", new SectorLobby());
 		EvInteract.isStart = false;
 	}
 
-	@Override
-	public void onDisable(){
-		for (Entity e : Bukkit.getWorlds().get(0).getEntities()) if (e.getType() == EntityType.ARMOR_STAND) e.remove();
+	private static void initSectors() {
+		File dir = new File("sectors/");
+		if (!dir.exists()) {
+			dir.mkdir();
+		}
+
+		File[] var1 = dir.listFiles();
+		int var2 = var1.length;
+
+		for(int var3 = 0; var3 < var2; ++var3) {
+			File file = var1[var3];
+			SectorInfo info = (SectorInfo)FileIO.readByteable(file, SectorInfo.class);
+			if (info == null) {
+				file.delete();
+			} else {
+				Sector.addSector(file.getName(), info.getGame().createSector(info));
+			}
+		}
+
+	}
+
+	public void onDisable() {
+		Iterator var1 = ((World)Bukkit.getWorlds().get(0)).getEntities().iterator();
+
+		while(var1.hasNext()) {
+			Entity e = (Entity)var1.next();
+			if (e.getType() == EntityType.ARMOR_STAND) {
+				e.remove();
+			}
+		}
+
+	}
+
+	static {
+		teleportHub = (new ItemBuilder(Material.EMERALD)).withDisplayName("Вернуться в лобби").build();
 	}
 }

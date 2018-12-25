@@ -1,3 +1,8 @@
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by Fernflower decompiler)
+//
+
 package pro.delfik.spleef;
 
 import implario.net.Packet;
@@ -12,6 +17,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -23,6 +29,8 @@ import pro.delfik.lmao.ev.added.PacketEvent;
 import pro.delfik.spleef.sector.Sector;
 
 public class Events implements Listener {
+	public Events() {
+	}
 
 	@EventHandler
 	public void event(PlayerJoinEvent event) {
@@ -44,10 +52,12 @@ public class Events implements Listener {
 
 	@EventHandler
 	public void event(PlayerInteractEvent event) {
-		if (event.getAction() == Action.PHYSICAL) return;
-		Sector sector = Sector.getSector(event.getPlayer().getName());
-		if (sector == null) return;
-		sector.onClick(event);
+		if (event.getAction() != Action.PHYSICAL) {
+			Sector sector = Sector.getSector(event.getPlayer().getName());
+			if (sector != null) {
+				sector.onClick(event);
+			}
+		}
 	}
 
 	@EventHandler
@@ -57,14 +67,18 @@ public class Events implements Listener {
 
 	@EventHandler
 	public void event(InventoryClickEvent event) {
-		if (event.getWhoClicked().getGameMode() != GameMode.CREATIVE)
+		if (event.getWhoClicked().getGameMode() != GameMode.CREATIVE) {
 			event.setCancelled(true);
+		}
+
 	}
 
 	@EventHandler
 	public void event(PlayerDropItemEvent event) {
-		if (event.getPlayer().getGameMode() != GameMode.CREATIVE)
+		if (event.getPlayer().getGameMode() != GameMode.CREATIVE) {
 			event.setCancelled(true);
+		}
+
 	}
 
 	@EventHandler
@@ -79,24 +93,30 @@ public class Events implements Listener {
 
 	@EventHandler
 	public void event(EntityDamageByEntityEvent event) {
-		if (event.getEntity().getType() != EntityType.PLAYER || event.getDamager().getType() != EntityType.PLAYER) return;
-		Sector.getSector(event.getEntity().getName()).onHit(event);
+		if (event.getEntity().getType() == EntityType.PLAYER && event.getDamager().getType() == EntityType.PLAYER) {
+			Sector.getSector(event.getEntity().getName()).onHit(event);
+		}
 	}
 
 	@EventHandler
 	public void event(EntityDamageEvent event) {
-		if (event.getEntity().getType() != EntityType.PLAYER) return;
-		if (event.getCause() == EntityDamageEvent.DamageCause.VOID) {
-			event.setCancelled(true);
-			Sector.getSector(event.getEntity().getName()).onRespawn((Player) event.getEntity());
-		} else
-			Sector.getSector(event.getEntity().getName()).onDamage(event);
+		if (event.getEntity().getType() == EntityType.PLAYER) {
+			if (event.getCause() == DamageCause.VOID) {
+				event.setCancelled(true);
+				Sector.getSector(event.getEntity().getName()).onRespawn((Player)event.getEntity());
+			} else {
+				Sector.getSector(event.getEntity().getName()).onDamage(event);
+			}
+
+		}
 	}
 
 	@EventHandler
 	public void event(PacketEvent event) {
 		Packet packet = event.getPacket();
-		if (packet instanceof PacketCreateTop) Top.update(((PacketCreateTop) packet).getTop());
-	}
+		if (packet instanceof PacketCreateTop) {
+			Top.update(((PacketCreateTop)packet).getTop());
+		}
 
+	}
 }

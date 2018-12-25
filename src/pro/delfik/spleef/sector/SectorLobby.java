@@ -1,3 +1,8 @@
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by Fernflower decompiler)
+//
+
 package pro.delfik.spleef.sector;
 
 import org.bukkit.Bukkit;
@@ -5,39 +10,30 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import pro.delfik.lmao.outward.inventory.SlotGUI;
 import pro.delfik.lmao.outward.item.ItemBuilder;
 import pro.delfik.lmao.util.Vec5d;
-
-import java.util.Map;
+import pro.delfik.spleef.GameSelector;
+import pro.delfik.spleef.Minigame;
+import pro.delfik.spleef.modification.SectorInfo;
 
 public class SectorLobby extends Sector {
-
-	private static final ItemStack changeServer = new ItemBuilder(Material.WATCH).withDisplayName("§f>> §a§lИграть §f<<").build();
-	private static SlotGUI gui;
+	private static final ItemStack changeServer;
 
 	public SectorLobby() {
-		super(new Vec5d(-330.5, 4.5, 63.5, 90, 0));
-		if (gui != null) return;
-		gui = new SlotGUI("Выбор сервера", 1, (player, slot, item) -> {
-			Sector sector = getSectorName(item
-					.getItemMeta()
-					.getDisplayName());
-			if (sector == null) return;
-			sector.addPlayer(player);
-		}, null);
-		for (Map.Entry<String, Sector> entry : getEntries())
-			if (entry.getValue().visible())
-				gui.dummy(entry.getValue().getMaterial(), entry.getKey());
+		super(new Vec5d(-330.5D, 4.5D, 63.5D, 90.0D, 0.0D));
 	}
 
-	@Override
+	protected String getDisplayName() {
+		return "§eЛобби";
+	}
+
 	public void onClick(String nick, Material material) {
-		if (material == changeServer.getType())
-			Bukkit.getPlayer(nick).openInventory(gui.inv());
+		if (material == changeServer.getType()) {
+			GameSelector.openTo(Bukkit.getPlayer(nick));
+		}
+
 	}
 
-	@Override
 	protected void giveDefaultItems(Player player) {
 		super.giveDefaultItems(player);
 		Inventory inventory = player.getInventory();
@@ -45,4 +41,15 @@ public class SectorLobby extends Sector {
 		player.updateInventory();
 	}
 
+	public Minigame getMinigame() {
+		return null;
+	}
+
+	public SectorInfo getInfo() {
+		return null;
+	}
+
+	static {
+		changeServer = (new ItemBuilder(Material.WATCH)).withDisplayName("§f>> §a§lИграть §f<<").build();
+	}
 }

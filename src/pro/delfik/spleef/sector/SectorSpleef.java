@@ -1,10 +1,20 @@
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by Fernflower decompiler)
+//
+
 package pro.delfik.spleef.sector;
 
 import implario.net.packet.PacketTopUpdate;
 import implario.util.ByteZip;
 import implario.util.ServerType;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.Consumer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -18,81 +28,91 @@ import pro.delfik.lmao.outward.item.ItemBuilder;
 import pro.delfik.lmao.user.Person;
 import pro.delfik.lmao.util.Vec3i;
 import pro.delfik.spleef.Cuboid;
+import pro.delfik.spleef.GameSelector;
+import pro.delfik.spleef.Minigame;
 import pro.delfik.spleef.Spleef;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.bukkit.Material.AIR;
-import static org.bukkit.Material.SNOW_BLOCK;
+import pro.delfik.spleef.modification.SectorInfo;
 
 public class SectorSpleef extends Sector {
-
-	private static final ItemStack spade = new ItemBuilder(Material.DIAMOND_SPADE).unbreakable().withDisplayName("§aСмеятся надо после слова...")
-			.enchant(new Ench(Enchantment.DIG_SPEED, 10)).build();
-
-	private volatile boolean gameStarted = false, gameEnd = false;
+	private static final ItemStack spade;
+	private volatile boolean gameStarted = false;
+	private volatile boolean gameEnd = false;
 	private Cuboid cuboid;
-	private final List<String> game = new ArrayList<>();
-	private BukkitTask startGameTask, gameTask, trimTask;
+	private final List<String> game = new ArrayList();
+	private BukkitTask startGameTask;
+	private BukkitTask gameTask;
+	private BukkitTask trimTask;
 	private final Vec3i spectators;
 	private Cuboid center;
 	private Cuboid primary;
+	private long startTime;
 
 	public SectorSpleef(Vec3i spawn, Vec3i spectators, Cuboid cuboid) {
-		super(spawn, spade.getType());
-		this.cuboid = primary = cuboid;
+		super(spawn);
+		this.cuboid = this.primary = cuboid;
 		this.spectators = spectators;
 		int x = (cuboid.getTwo().x - cuboid.getOne().x) / 2 + cuboid.getOne().x;
 		int z = (cuboid.getTwo().z - cuboid.getOne().z) / 2 + cuboid.getOne().z;
 		int y = cuboid.getOne().y;
-		center = new Cuboid(new Vec3i(x - 4, y, z - 4), new Vec3i(x + 4, y, z + 4));
-		setSnow();
+		this.center = new Cuboid(new Vec3i(x - 4, y, z - 4), new Vec3i(x + 4, y, z + 4));
+		this.setSnow();
 	}
 
-	@Override
 	public void onClick(String nick, Material material) {
-		if (material == Spleef.teleportHub.getType())
+		if (material == Spleef.teleportHub.getType()) {
 			Sector.getSectorName("lobby").addPlayer(nick);
-	}
-
-	@Override
-	public boolean canJoin(String nick) {
-		return !gameEnd;
-	}
-
-	@Override
-	public void onRespawn(String nick) {
-		if (!gameStarted) return;
-		playerDeath(nick, false);
-	}
-
-	@Override
-	public void onJoin(String nick) {
-		if (gameStarted) {
-			if (game.size() < 2) {
-				restartGame();
-				return;
-			}
-			addSpectator(nick);
-			return;
 		}
-		sendMessage(nick, "присоединился");
-		game.add(nick);
-		if (game.size() > 1) startGame();
+
 	}
 
-	@Override
+	public boolean canJoin(String nick) {
+		return !this.gameEnd;
+	}
+
+	public Minigame getMinigame() {
+		return Minigame.SPLEEF;
+	}
+
+	public void onRespawn(String nick) {
+		if (this.gameStarted) {
+			this.playerDeath(nick, false);
+		}
+	}
+
+	public void onJoin(String nick) {
+		if (this.gameStarted) {
+			if (this.game.size() < 2) {
+				this.restartGame();
+			} else {
+				this.addSpectator(nick);
+			}
+		} else {
+			this.sendMessage(nick, "присоединился");
+			this.game.add(nick);
+			GameSelector.update(this);
+			if (this.game.size() > 1) {
+				this.startGame();
+			}
+
+		}
+	}
+
 	public void onLeave(String nick) {
-		playerDeath(nick, true);
+		this.playerDeath(nick, true);
 	}
 
-	@Override
 	public boolean onBreak(String nick, Player player, Block block) {
-		return !(gameStarted && block.getType() == SNOW_BLOCK);
+		return !this.gameStarted || block.getType() != Material.SNOW_BLOCK;
 	}
 
-	@Override
+	public void clearPlayer(String nick) {
+		super.clearPlayer(nick);
+		if (this.getPlayers().size() < 2) {
+			this.stopGame();
+		}
+
+	}
+
 	protected void giveDefaultItems(Player player) {
 		super.giveDefaultItems(player);
 		Inventory inventory = player.getInventory();
@@ -102,81 +122,146 @@ public class SectorSpleef extends Sector {
 	}
 
 	private void playerDeath(String nick, boolean leave) {
-		game.remove(nick);
-		sendMessage(nick, leave ? "ливнул" : "упал");
+		this.game.remove(nick);
+		GameSelector.update(this);
+		this.sendMessage(nick, leave ? "ливнул" : "упал");
 		updateStatistics(nick, false);
-		if (!gameStarted) return;
-		if (!leave) addSpectator(nick);
-		if (game.size() != 1) return;
-		if (gameStarted) {
-			String win = game.get(0);
-			updateStatistics(win, true);
-			sendMessage(win, "победил");
-			restartGame();
-		} else if (leave) {
-			startGameTask.cancel();
-			gameTask.cancel();
-			trimTask.cancel();
-			sendMessage("Недостаточно игроков");
+		if (this.gameStarted) {
+			if (!leave) {
+				this.addSpectator(nick);
+			}
+
+			if (this.game.size() == 1) {
+				if (this.gameStarted) {
+					if (System.currentTimeMillis() - this.startTime < 20000L) {
+						this.sendMessage("§cИгра слишком короткая и не будет засчитана.");
+					} else {
+						String win = (String)this.game.get(0);
+						updateStatistics(win, true);
+						this.sendMessage(win, "победил");
+					}
+
+					this.restartGame();
+				} else if (leave) {
+					this.startGameTask.cancel();
+					this.gameTask.cancel();
+					this.trimTask.cancel();
+					this.sendMessage("Недостаточно игроков");
+				}
+
+			}
 		}
 	}
 
 	private void addSpectator(String nick) {
-		Person.get(nick).teleport(spectators.toLocation(Bukkit.getWorlds().get(0)));
+		Person.get(nick).teleport(this.spectators.toLocation((World)Bukkit.getWorlds().get(0)));
 	}
 
 	private void startGame() {
-		if (startGameTask != null) return;
-		sendMessage("§eЧерез 5 секунд, игра начнётся");
-		startGameTask = I.delay(() -> {
-			gameStarted = true;
-			sendMessage("§eИгра началась!");
-			for (String nick : game)
-				Person.get(nick).sendTitle("§aИгра началась!");
-		}, 100);
-		gameTask = I.delay(() -> {
-			sendMessage("§eНикто не успел выиграть...");
-			restartGame();
-		}, 3600);
-		trimTask = I.timer(() -> {
-			sendMessage("§aАрена сужается!");
-			boolean xmin = cuboid.getTwo().x - cuboid.getOne().x > 9;
-			boolean zmin = cuboid.getTwo().z - cuboid.getOne().z > 9;
-			cuboid = new Cuboid(cuboid.getOne().add(xmin ? 1 : 0, 0, zmin ? 1 : 0), cuboid.getTwo().add(xmin ? -1 : 0, 0, zmin ? -1 : 0));
-			center.fill(SNOW_BLOCK, 0);
-			primary.foreach(v -> {
-				if (!cuboid.belongs(v)) v.toLocation(Bukkit.getWorlds().get(0)).getBlock().setType(AIR);
-			});
-		}, 200);
+		if (this.startGameTask == null) {
+			this.sendMessage("§eЧерез 5 секунд, игра начнётся");
+			this.startGameTask = I.delay(() -> {
+				this.gameStarted = true;
+				this.sendMessage("§eИгра началась!");
+				this.startTime = System.currentTimeMillis();
+				Iterator var1 = this.game.iterator();
+
+				while(var1.hasNext()) {
+					String nick = (String)var1.next();
+					Person.get(nick).sendTitle("§aИгра началась!");
+				}
+
+			}, 100);
+			this.gameTask = I.delay(() -> {
+				this.sendMessage("§eНикто не успел выиграть...");
+				this.restartGame();
+			}, 3600);
+			this.trimTask = I.timer(() -> {
+				this.sendMessage("§aАрена сужается!");
+				boolean xmin = this.cuboid.getTwo().x - this.cuboid.getOne().x > 9;
+				boolean zmin = this.cuboid.getTwo().z - this.cuboid.getOne().z > 9;
+				this.cuboid = new Cuboid(this.cuboid.getOne().add(xmin ? 1 : 0, 0, zmin ? 1 : 0), this.cuboid.getTwo().add(xmin ? -1 : 0, 0, zmin ? -1 : 0));
+				this.center.fill(Material.SNOW_BLOCK, 0);
+				this.primary.foreach((v) -> {
+					if (!this.cuboid.belongs(v)) {
+						v.toLocation((World)Bukkit.getWorlds().get(0)).getBlock().setType(Material.AIR);
+					}
+
+				});
+			}, 200);
+		}
+	}
+
+	private void stopGame() {
+		if (this.startGameTask != null) {
+			this.startGameTask.cancel();
+		}
+
+		if (this.trimTask != null) {
+			this.trimTask.cancel();
+		}
+
+		if (this.gameTask != null) {
+			this.gameTask.cancel();
+		}
+
+		this.startTime = 0L;
+		this.startGameTask = null;
+		this.gameTask = null;
+		this.trimTask = null;
+		this.sendMessage("§cИгра остановлена.");
 	}
 
 	private void restartGame() {
-		gameEnd = true;
-		gameStarted = false;
-		for (String nick : getPlayers()) {
+		this.gameEnd = true;
+		this.gameStarted = false;
+		Iterator var1 = this.getPlayers().iterator();
+
+		while(var1.hasNext()) {
+			String nick = (String)var1.next();
 			Player player = Bukkit.getPlayer(nick);
-			teleport(player);
+			this.teleport(player);
 		}
-		cuboid = primary;
-		setSnow();
-		game.clear();
-		game.addAll(getPlayers());
-		gameEnd = false;
-		if (startGameTask != null) startGameTask.cancel();
-		startGameTask = null;
-		if (gameTask != null) gameTask.cancel();
-		gameTask = null;
-		if (trimTask != null) trimTask.cancel();
-		trimTask = null;
-		if (game.size() > 1) startGame();
+
+		this.cuboid = this.primary;
+		this.setSnow();
+		this.game.clear();
+		this.game.addAll(this.getPlayers());
+		this.gameEnd = false;
+		if (this.startGameTask != null) {
+			this.startGameTask.cancel();
+		}
+
+		this.startGameTask = null;
+		if (this.gameTask != null) {
+			this.gameTask.cancel();
+		}
+
+		this.gameTask = null;
+		if (this.trimTask != null) {
+			this.trimTask.cancel();
+		}
+
+		this.trimTask = null;
+		if (this.game.size() > 1) {
+			this.startGame();
+		}
+
 	}
 
 	private void setSnow() {
-		cuboid.fill(SNOW_BLOCK, 0);
+		this.cuboid.fill(Material.SNOW_BLOCK, 0);
 	}
 
 	public static void updateStatistics(String nick, boolean win) {
-		Connect.send(new PacketTopUpdate(ServerType.SPLEEF, new ByteZip().add(1).add(win ? 1 : 0).build(), nick));
+		Connect.send(new PacketTopUpdate(ServerType.SPLEEF, (new ByteZip()).add(1).add(win ? 1 : 0).build(), nick));
 	}
 
+	public SectorInfo getInfo() {
+		return new SectorInfo(this.getNickname(), this.spawnPoint.toVec3i(), this.spectators.toVec3i(), this.cuboid, this.getMinigame());
+	}
+
+	static {
+		spade = (new ItemBuilder(Material.DIAMOND_SPADE)).unbreakable().withDisplayName("§aСмеятся надо после слова...").enchant(new Ench[]{new Ench(Enchantment.DIG_SPEED, 10)}).build();
+	}
 }
